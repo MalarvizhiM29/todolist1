@@ -1,22 +1,49 @@
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js");
+const mongoose = require("mongoose");
 
 const app = express();
-
-const items=["Leetcode","web development","take u forward"];
 
 app.set("view engine","ejs");
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static("public"));
 
+const { MongoClient } = require('mongodb');
+
+async function insertData() {
+  const uri = 'mongodb://127.0.0.1:27017'; // Replace with your MongoDB connection string
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+
+    const database = client.db('todolistDB'); // Replace with your database name
+    const collection = database.collection('items'); // Replace with your collection name
+
+    const data = [
+      { name: 'Item 1' },
+      { name: 'Item 2' },
+      { name: 'Item 3' },
+    ];
+
+    const result = await collection.insertMany(data);
+
+    console.log(`${result.insertedCount} documents inserted`);
+  } catch (error) {
+    console.error('Error inserting data:', error);
+  } finally {
+    client.close();
+  }
+}
+
+insertData();
+
 
 app.get("/",(req,res)=>{
 
-   const day = date.getDate();
-   res.render("list", {kindOfDay: day , newListItems: items});
+   res.render("list", {kindOfDay: "Today" , newListItems: items});
 
 })
 
@@ -24,8 +51,14 @@ app.get("/",(req,res)=>{
 app.post("/",(req,res)=>{
 
     const item = req.body.newItem;
-    items.push(item);
-    res.redirect("/");
+
+    if(req.body.list === "work"){
+        workItems.push(item);
+        res.redirect("/work");
+    } else {
+        items.push(item);
+        res.redirect("/");
+    }
 
 })
 
