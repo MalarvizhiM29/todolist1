@@ -23,9 +23,9 @@ async function insertData() {
     const collection = database.collection('items'); // Replace with your collection name
 
     const data = [
-      { name: 'Item 1' },
-      { name: 'Item 2' },
-      { name: 'Item 3' },
+      { name: 'Item1' },
+      { name: 'Item2' },
+      { name: 'Item3' },
     ];
 
     const result = await collection.insertMany(data);
