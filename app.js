@@ -60,15 +60,41 @@ app.get("/", function(req, res) {
 
 app.post("/", function(req, res){
 
-  const item = req.body.newItem;
+  const itemName = req.body.newItem;
 
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    items.push(item);
-    res.redirect("/");
-  }
+  const item = new Item({
+    name: itemName
+  });
+
+  item.save();
+  res.redirect("/");
+
+});
+
+app.post("/delete", function(req,res){
+  const checkedItemId = req.body.checkbox;
+
+  Item.findByIdAndRemove(checkedItemId)
+  .then((removedDocument) => {
+    if (removedDocument) {
+      console.log('Document removed successfully:', removedDocument);
+      res.redirect("/");
+    } else {
+      console.log('No document found with the provided ID:', documentId);
+    }
+  })
+  .catch((error) => {
+    console.error('Error occurred while removing document:', error);
+  });
+
+});
+
+app.get("/work", function(req,res){
+  res.render("list", {listTitle: "Work List", newListItems: workItems});
+});
+
+app.get("/about", function(req, res){
+  res.render("about");
 });
 
 app.listen(3000,()=>{
