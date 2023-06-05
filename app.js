@@ -34,6 +34,13 @@ const item3 = new Item({
  
 const defaultItems = [item1, item2, item3];
 
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
+
+const List = mongoose.model("List",listSchema);
+
 app.get("/", function(req, res) {
 
   Item.find({})
@@ -58,16 +65,62 @@ app.get("/", function(req, res) {
 
 });
 
+app.get("/:customListName", function(req,res){
+  const customListName = req.params.customListName;
+
+  List.findOne({ name: customListName })
+    .then((foundList) => {
+      if (foundList) {
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+      } else {
+        const list = new List({
+          name: customListName,
+          items: defaultItems
+        });
+      
+        list.save();
+        res.redirect("/" + customListName);
+      }
+    })
+    .catch((error) => {
+      console.error('Error occurred while finding document:', error);
+    });
+
+});
+
 app.post("/", function(req, res){
 
   const itemName = req.body.newItem;
+  const listName = req.body.list;
 
   const item = new Item({
     name: itemName
   });
 
-  item.save();
-  res.redirect("/");
+  if(listName === "Today"){
+    item.save();
+    res.redirect("/");
+  } else{
+
+    List.findOne({ name: listName })
+    .then((foundList) => {
+      
+      if (foundList !== null) {
+        if (foundList.items) {
+          foundList.items.push(item);
+        } else {
+          foundList.items = [item];
+        }
+      }
+        foundList.save();
+        res.redirect("/" + listName);
+      
+    })
+    .catch((error) => {
+      console.error('Error occurred while finding document:', error);
+    });
+
+    }
 
 });
 
