@@ -10,58 +10,66 @@ app.set("view engine","ejs");
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.static("public"));
 
-const { MongoClient } = require('mongodb');
-
-async function insertData() {
-  const uri = 'mongodb://127.0.0.1:27017'; // Replace with your MongoDB connection string
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-
-    const database = client.db('todolistDB'); // Replace with your database name
-    const collection = database.collection('items'); // Replace with your collection name
-
-    const data = [
-      { name: 'Item1' },
-      { name: 'Item2' },
-      { name: 'Item3' },
-    ];
-
-    const result = await collection.insertMany(data);
-
-    console.log(`${result.insertedCount} documents inserted`);
-  } catch (error) {
-    console.error('Error inserting data:', error);
-  } finally {
-    client.close();
-  }
-}
-
-insertData();
-
-
-app.get("/",(req,res)=>{
-
-   res.render("list", {kindOfDay: "Today" , newListItems: items});
-
+mongoose.connect('mongodb://127.0.0.1:27017/todolistDB', {
+  useNewUrlParser: true,
 })
 
+const itemsSchema = new mongoose.Schema({
+  name: String,
+});
 
-app.post("/",(req,res)=>{
+const Item = mongoose.model("Item", itemsSchema);
 
-    const item = req.body.newItem;
+const item1 = new Item({
+  name: "Welcome to your todolist!"
+});
+ 
+const item2 = new Item({
+  name: "Hit the + button to add a new item."
+});
+ 
+const item3 = new Item({
+  name: "<-- Hit this to delete an item."
+});
+ 
+const defaultItems = [item1, item2, item3];
 
-    if(req.body.list === "work"){
-        workItems.push(item);
-        res.redirect("/work");
-    } else {
-        items.push(item);
+app.get("/", function(req, res) {
+
+  Item.find({})
+  .then(foundItems => {
+
+    if (foundItems.length === 0) {
+      Item.insertMany(defaultItems)
+        .then(() => {
+          console.log('Items inserted successfully!');
+        })
+        .catch((error) => {
+          console.error(error);
+        });
         res.redirect("/");
+    } else {
+      res.render("list", {listTitle: "Today", newListItems: foundItems});
     }
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
 
-})
+});
 
+app.post("/", function(req, res){
+
+  const item = req.body.newItem;
+
+  if (req.body.list === "Work") {
+    workItems.push(item);
+    res.redirect("/work");
+  } else {
+    items.push(item);
+    res.redirect("/");
+  }
+});
 
 app.listen(3000,()=>{
     console.log("Server started on port 3000");
